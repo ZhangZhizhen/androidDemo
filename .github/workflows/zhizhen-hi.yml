@@ -1,0 +1,27 @@
+name: 机器人入职致辞
+on:
+  push:     # 只要你往这个项目推代码，它就干活
+  pull_request: # 只要你发起合并请求，它也干活
+
+jobs:
+  say-hello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 获取机器人授权
+        id: get_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: 机器人开口说话
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.get_token.outputs.token }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number || 1,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "👋 报告老板 @ZhangZhizhen ！\n\n我是你的 zhizhenassistant。我已经成功入职这个项目！\n\n以后你的 Android/iOS 代码打包、发布，都可以交给我来盯着。🚀"
+            })
