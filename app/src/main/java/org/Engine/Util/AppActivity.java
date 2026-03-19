@@ -18,5 +18,6 @@ public class AppActivity extends AppCompatActivity {
         Log.i("AppActivity", "onCreate");
         Log.i("AppActivity", "aaa");
         Log.i("AppActivity", "bbb");
+        Log.i("AppActivity", "ccc");
     }
 }
