@@ -15,9 +15,20 @@ jobs:
       - name: 提取本周更新内容
         id: get_logs
         run: |
-          # 提取最近 7 天的提交记录，并按前缀分类
-          echo "FEATS=$(git log --since='1 week ago' --grep='feat:' --pretty=format:'- %s')" >> $GITHUB_ENV
-          echo "FIXES=$(git log --since='1 week ago' --grep='fix:' --pretty=format:'- %s')" >> $GITHUB_ENV
+          # 这样写更稳：抓取最近7天包含 feat: 或 fix: 的行
+          # --oneline 简化输出，方便机器人阅读
+          FEAT_LOGS=$(git log --since="7 days ago" --pretty=format:"- %s" | grep "feat:" || echo "暂无新功能")
+          FIX_LOGS=$(git log --since="7 days ago" --pretty=format:"- %s" | grep "fix:" || echo "暂无 Bug 修复")
+          
+          # 将结果存入环境变量
+          {
+            echo "FEATS<<EOF"
+            echo "$FEAT_LOGS"
+            echo "EOF"
+            echo "FIXES<<EOF"
+            echo "$FIX_LOGS"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
 
       - name: 获取机器人授权
         id: get_token
