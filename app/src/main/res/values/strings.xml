@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Oops! I’m King</string>
+    <string name="facebook_app_id">${facebook_app_id}</string>
+<!--  fb_login_protocol_scheme 的值是 facebook_app_id 的值加个前缀fb -->
+<!--  例：
+        facebook_app_id: 40000123123
+        fb_login_protocol_scheme: fb40000123123
+-->
+    <string name="fb_login_protocol_scheme">fb${facebook_app_id}</string>
+</resources>

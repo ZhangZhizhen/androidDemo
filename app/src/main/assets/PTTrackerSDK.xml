@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<PTTrackerSDK>
+    <RunConfig>
+        <RunConfig appId="52001001" appKey="e6d73904aed40d750e6a4c68b3dd75a8"
+            biagent="yly-na-bi-52001000.mjoy1.com" billingModule="Rgame" debug="true"
+            foreign="true" language="en" secretKey="ra1502YJ2ogAym0E" />
+        <ThirdPlatform />
+        <Tracker />
+    </RunConfig>
+</PTTrackerSDK>
