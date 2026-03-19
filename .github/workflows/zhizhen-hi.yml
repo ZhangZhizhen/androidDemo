@@ -1,52 +1,57 @@
-name: 机器人入职致辞及代码质检
+name: 自动生成更新周报
 on:
   push:
-  pull_request:
+    branches: [ main, master ] # 只要你推送到主分支就运行
 
 jobs:
-  say-hello:
+  changelog:
     runs-on: ubuntu-latest
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 获取完整历史记录，方便对比
 
-      - name: 检查自杀逻辑 (5/0)
-        id: check_code
-        # 注意：这里加了 || true 是为了防止这一步报错直接把整个流程卡死
+      - name: 提取本周更新内容
+        id: get_logs
         run: |
-          if grep -r "5/0" .; then
-            echo "DETECTED=true" >> $GITHUB_ENV
-            echo "发现错误，准备报警"
-            exit 1
-          else
-            echo "DETECTED=false" >> $GITHUB_ENV
-            echo "代码洁净，准备表扬"
-          fi
+          # 提取最近 7 天的提交记录，并按前缀分类
+          echo "FEATS=$(git log --since='1 week ago' --grep='feat:' --pretty=format:'- %s')" >> $GITHUB_ENV
+          echo "FIXES=$(git log --since='1 week ago' --grep='fix:' --pretty=format:'- %s')" >> $GITHUB_ENV
 
       - name: 获取机器人授权
-        # 关键点：不管上面 grep 有没有报错，这一步都要执行
-        if: always() 
         id: get_token
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - name: 机器人开口说话
-        # 关键点：不管前面红没红，机器人都要出来评价
-        if: always() && steps.get_token.outputs.token
+      - name: 机器人发布周报
         uses: actions/github-script@v7
         with:
           github-token: ${{ steps.get_token.outputs.token }}
           script: |
-            const hasError = process.env.DETECTED === 'true';
-            const message = hasError 
-              ? "🚨 **警报老板 @ZhangZhizhen ！**\n\n我在代码里抓到了 **`5/0`** 这种必崩的逻辑！我是你的 zhizhenassistant，建议你在本地修复后再推送。🛑" 
-              : "👋 报告老板 @ZhangZhizhen ！\n\n我是你的 zhizhenassistant。我已经成功入职！刚才扫了一圈代码，没发现明显的自杀逻辑，干得漂亮！🚀";
+            const feats = process.env.FEATS || "暂无新功能开发";
+            const fixes = process.env.FIXES || "本周没有发现 Bug 修复";
+            
+            const report = `
+            # 📅 zhizhenassistant 项目周报
+            
+            亲的老板 @ZhangZhizhen，这是我为您整理的本周开发动态：
+            
+            ### ✨ 新增功能 (Features)
+            ${feats}
+            
+            ### 🐛 修复问题 (Bug Fixes)
+            ${fixes}
+            
+            ---
+            *报告由您的专属机器人 zhizhenassistant 自动生成。*
+            `;
 
             github.rest.issues.createComment({
               issue_number: 1,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: message
+              body: report
             })
