@@ -1,7 +1,5 @@
 name: 自动生成更新周报
-on:
-  push:
-    branches: [ main, master ] # 只要你推送到主分支就运行
+on: [push]
 
 jobs:
   changelog:
@@ -10,59 +8,36 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 获取完整历史记录，方便对比
+          fetch-depth: 0
 
-      - name: 提取本周更新内容
-        id: get_logs
+      - name: 提取内容
+        id: logs
         run: |
-          # 这样写更稳：抓取最近7天包含 feat: 或 fix: 的行
-          # --oneline 简化输出，方便机器人阅读
-          FEAT_LOGS=$(git log --since="7 days ago" --pretty=format:"- %s" | grep "feat:" || echo "暂无新功能")
-          FIX_LOGS=$(git log --since="7 days ago" --pretty=format:"- %s" | grep "fix:" || echo "暂无 Bug 修复")
+          # 提取 feat 和 fix，如果没有则显示“无”
+          F=$(git log --since="7 days ago" --grep="feat:" --pretty=format:"- %s" || echo "无新功能")
+          B=$(git log --since="7 days ago" --grep="fix:" --pretty=format:"- %s" || echo "无 Bug 修复")
           
-          # 将结果存入环境变量
-          {
-            echo "FEATS<<EOF"
-            echo "$FEAT_LOGS"
-            echo "EOF"
-            echo "FIXES<<EOF"
-            echo "$FIX_LOGS"
-            echo "EOF"
-          } >> "$GITHUB_ENV"
+          # 存入环境变量（最稳妥的写法）
+          echo "FEATS=$F" >> $GITHUB_ENV
+          echo "FIXES=$B" >> $GITHUB_ENV
 
-      - name: 获取机器人授权
-        id: get_token
+      - name: 授权
+        id: auth
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - name: 机器人发布周报
+      - name: 汇报
+        if: always() # 无论成败，强制机器人现身
         uses: actions/github-script@v7
         with:
-          github-token: ${{ steps.get_token.outputs.token }}
+          github-token: ${{ steps.auth.outputs.token }}
           script: |
-            const feats = process.env.FEATS || "暂无新功能开发";
-            const fixes = process.env.FIXES || "本周没有发现 Bug 修复";
-            
-            const report = `
-            # 📅 zhizhenassistant 项目周报
-            
-            亲的老板 @ZhangZhizhen，这是我为您整理的本周开发动态：
-            
-            ### ✨ 新增功能 (Features)
-            ${feats}
-            
-            ### 🐛 修复问题 (Bug Fixes)
-            ${fixes}
-            
-            ---
-            *报告由您的专属机器人 zhizhenassistant 自动生成。*
-            `;
-
+            const body = `### 📅 本周开发简报\n\n**✨ 新功能：**\n${process.env.FEATS || '无'}\n\n**🐛 修复：**\n${process.env.FIXES || '无'}`;
             github.rest.issues.createComment({
               issue_number: 1,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: report
+              body: body
             })
