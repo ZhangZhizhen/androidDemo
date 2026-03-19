@@ -16,6 +16,6 @@ public class AppActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_app);
         Log.i("AppActivity", "onCreate");
-
+        Log.i("AppActivity", "aaa");
     }
 }
