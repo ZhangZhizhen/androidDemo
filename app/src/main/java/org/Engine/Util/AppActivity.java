@@ -17,5 +17,6 @@ public class AppActivity extends AppCompatActivity {
         setContentView(R.layout.activity_app);
         Log.i("AppActivity", "onCreate");
         Log.i("AppActivity", "aaa");
+        Log.i("AppActivity", "bbb");
     }
 }
