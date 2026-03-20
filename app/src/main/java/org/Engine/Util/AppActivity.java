@@ -1,11 +1,12 @@
 package org.Engine.Util;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.global.idlerogue.R;
+import com.zzz.test.R;
 
 
 public class AppActivity extends AppCompatActivity {
@@ -16,8 +17,12 @@ public class AppActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_app);
         Log.i("AppActivity", "onCreate");
-        Log.i("AppActivity", "aaa");
-        Log.i("AppActivity", "bbb");
-        Log.i("AppActivity", "ccc");
+        
+        // 跳转到 LoginActivity
+        Intent intent = new Intent(this, LoginActivity.class);
+        startActivity(intent);
+        
+        // 如果不需要返回到 AppActivity，可以调用 finish()
+        finish();
     }
 }

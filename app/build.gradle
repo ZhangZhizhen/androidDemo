@@ -4,9 +4,9 @@ android {
     
 
     compileSdkVersion 35
-    namespace "com.global.idlerogue"
+    namespace "com.zzz.test"
     defaultConfig {
-        applicationId "com.global.idlerogue"
+        applicationId "com.zzz.test"
         minSdkVersion 21
         targetSdkVersion 35
         versionCode 1
