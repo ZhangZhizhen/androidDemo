@@ -21,7 +21,7 @@ jobs:
       - name: 2. 机器人编写 Java 代码 (UI + 逻辑)
         run: |
           # 【重要】请将此处路径修改为你的实际 Java 包路径
-          PACKAGE_PATH="app/src/main/java/com/example/androiddemo"
+          PACKAGE_PATH="app/src/main/java/org/Engine/Util"
           RES_PATH="app/src/main/res/layout"
           mkdir -p $PACKAGE_PATH
           mkdir -p $RES_PATH
