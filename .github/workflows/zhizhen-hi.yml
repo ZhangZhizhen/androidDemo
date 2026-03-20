@@ -1,8 +1,8 @@
-name: 自动生成更新周报
+name: 自动生成周报并创建登录页
 on: [push]
 
 jobs:
-  changelog:
+  changelog-and-ui:
     runs-on: ubuntu-latest
     steps:
       - name: 检出代码
@@ -10,35 +10,87 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 提取内容
+      - name: 1. 提取周报内容
         id: vars
         run: |
-          # 提取 feat 和 fix，用逗号连接成一行，防止格式崩掉
           F_LOGS=$(git log --since="7 days ago" --grep="feat:" --pretty=format:"%s" | tr '\n' ',' || echo "暂无")
           B_LOGS=$(git log --since="7 days ago" --grep="fix:" --pretty=format:"%s" | tr '\n' ',' || echo "暂无")
-          
           echo "FEATS=$F_LOGS" >> $GITHUB_ENV
           echo "FIXES=$B_LOGS" >> $GITHUB_ENV
 
-      - name: 授权
+      - name: 2. 机器人写 Android 代码 (UI + 逻辑)
+        run: |
+          # 这里的路径请根据你工程的实际包名修改
+          PACKAGE_PATH="app/src/main/java/com/example/androiddemo"
+          RES_PATH="app/src/main/res/layout"
+          mkdir -p $PACKAGE_PATH
+          mkdir -p $RES_PATH
+
+          # 创建布局文件
+          cat <<EOF > $RES_PATH/activity_login.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:gravity="center"
+              android:padding="16dp">
+              <Button
+                  android:id="@+id/btn_login"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text="登录" />
+          </LinearLayout>
+          EOF
+
+          # 创建 Activity 代码
+          cat <<EOF > $PACKAGE_PATH/LoginActivity.kt
+          package com.example.androiddemo
+          import android.os.Bundle
+          import android.util.Log
+          import android.widget.Button
+          import androidx.appcompat.app.AppCompatActivity
+
+          class LoginActivity : AppCompatActivity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContentView(R.layout.activity_login)
+                  findViewById<Button>(R.id.btn_login).setOnClickListener {
+                      Log.d("zhizhenassistant", "登录按钮被点击了！")
+                  }
+              }
+          }
+          EOF
+
+      - name: 3. 获取授权 (Token)
         id: auth
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - name: 汇报
+      - name: 4. 提交代码回仓库
+        run: |
+          git config --global user.name "zhizhenassistant[bot]"
+          git config --global user.email "zhizhenassistant[bot]@users.noreply.github.com"
+          
+          # 使用 Token 重新设置远程地址以获得 Push 权限
+          git remote set-url origin https://x-access-token:${{ steps.auth.outputs.token }}@github.com/${{ github.repository }}
+          
+          git add .
+          # 只有在有变动时才提交，防止脚本报错
+          git diff-index --quiet HEAD || git commit -m "feat: 机器人自动生成登录界面"
+          git push
+
+      - name: 5. 在 Issue 汇报
         if: always()
         uses: actions/github-script@v7
         with:
-          # 这里的 github-token 必须准确对应上面生成的 token
           github-token: ${{ steps.auth.outputs.token }}
           script: |
             const feats = process.env.FEATS.split(',').filter(i => i).map(i => '- ' + i).join('\n') || '暂无';
             const fixes = process.env.FIXES.split(',').filter(i => i).map(i => '- ' + i).join('\n') || '暂无';
-            
-            const body = `## 📅 zhizhenassistant 项目周报\n\n### ✨ 新增功能\n${feats}\n\n### 🐛 修复记录\n${fixes}\n\n--- \n*老板 @ZhangZhizhen，这是我为您整理的最新进展。*`;
-            
+            const body = `## 📅 项目动态\n\n### ✨ 新增功能\n${feats}\n\n### 🐛 修复记录\n${fixes}\n\n--- \n**🤖 机器人提示：** 我已自动为您生成了 \`LoginActivity.kt\`，请执行 \`git pull\` 查看！`;
             await github.rest.issues.createComment({
               issue_number: 1,
               owner: context.repo.owner,
