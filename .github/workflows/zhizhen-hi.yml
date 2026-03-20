@@ -1,4 +1,4 @@
-name: 自动生成周报并创建登录页
+name: 自动生成周报并创建登录页(Java版)
 on: [push]
 
 jobs:
@@ -18,15 +18,15 @@ jobs:
           echo "FEATS=$F_LOGS" >> $GITHUB_ENV
           echo "FIXES=$B_LOGS" >> $GITHUB_ENV
 
-      - name: 2. 机器人写 Android 代码 (UI + 逻辑)
+      - name: 2. 机器人编写 Java 代码 (UI + 逻辑)
         run: |
-          # 这里的路径请根据你工程的实际包名修改
+          # 【重要】请将此处路径修改为你的实际 Java 包路径
           PACKAGE_PATH="app/src/main/java/com/example/androiddemo"
           RES_PATH="app/src/main/res/layout"
           mkdir -p $PACKAGE_PATH
           mkdir -p $RES_PATH
 
-          # 创建布局文件
+          # 创建布局文件 (XML 不分语言，保持不变)
           cat <<EOF > $RES_PATH/activity_login.xml
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -43,21 +43,29 @@ jobs:
           </LinearLayout>
           EOF
 
-          # 创建 Activity 代码
-          cat <<EOF > $PACKAGE_PATH/LoginActivity.kt
-          package com.example.androiddemo
-          import android.os.Bundle
-          import android.util.Log
-          import android.widget.Button
-          import androidx.appcompat.app.AppCompatActivity
+          # 创建 Java 版 Activity 代码
+          cat <<EOF > $PACKAGE_PATH/LoginActivity.java
+          package com.example.androiddemo;
 
-          class LoginActivity : AppCompatActivity() {
-              override fun onCreate(savedInstanceState: Bundle?) {
-                  super.onCreate(savedInstanceState)
-                  setContentView(R.layout.activity_login)
-                  findViewById<Button>(R.id.btn_login).setOnClickListener {
-                      Log.d("zhizhenassistant", "登录按钮被点击了！")
-                  }
+          import android.os.Bundle;
+          import android.util.Log;
+          import android.view.View;
+          import android.widget.Button;
+          import androidx.appcompat.app.AppCompatActivity;
+
+          public class LoginActivity extends AppCompatActivity {
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  setContentView(R.layout.activity_login);
+
+                  Button btnLogin = findViewById(R.id.btn_login);
+                  btnLogin.setOnClickListener(new View.OnClickListener() {
+                      @Override
+                      public void onClick(View v) {
+                          Log.d("zhizhenassistant", "Java 版登录按钮被点击了！🚀");
+                      }
+                  });
               }
           }
           EOF
@@ -74,12 +82,10 @@ jobs:
           git config --global user.name "zhizhenassistant[bot]"
           git config --global user.email "zhizhenassistant[bot]@users.noreply.github.com"
           
-          # 使用 Token 重新设置远程地址以获得 Push 权限
           git remote set-url origin https://x-access-token:${{ steps.auth.outputs.token }}@github.com/${{ github.repository }}
           
           git add .
-          # 只有在有变动时才提交，防止脚本报错
-          git diff-index --quiet HEAD || git commit -m "feat: 机器人自动生成登录界面"
+          git diff-index --quiet HEAD || git commit -m "feat: 机器人自动生成 Java 登录界面"
           git push
 
       - name: 5. 在 Issue 汇报
@@ -90,7 +96,7 @@ jobs:
           script: |
             const feats = process.env.FEATS.split(',').filter(i => i).map(i => '- ' + i).join('\n') || '暂无';
             const fixes = process.env.FIXES.split(',').filter(i => i).map(i => '- ' + i).join('\n') || '暂无';
-            const body = `## 📅 项目动态\n\n### ✨ 新增功能\n${feats}\n\n### 🐛 修复记录\n${fixes}\n\n--- \n**🤖 机器人提示：** 我已自动为您生成了 \`LoginActivity.kt\`，请执行 \`git pull\` 查看！`;
+            const body = `## 📅 项目动态\n\n### ✨ 新增功能\n${feats}\n\n### 🐛 修复记录\n${fixes}\n\n--- \n**🤖 机器人提示：** 我已为您生成了 \`LoginActivity.java\`。老板，代码已写好，请 Pull 查看！`;
             await github.rest.issues.createComment({
               issue_number: 1,
               owner: context.repo.owner,
